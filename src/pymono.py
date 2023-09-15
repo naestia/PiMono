@@ -1,17 +1,20 @@
 import sys
 import os
 
+import requests
+import time
 from PyQt6.QtWidgets import QApplication, QWidget, QHBoxLayout, QLineEdit, QPushButton, QListWidgetItem
-from PyQt6.QtGui import QPixmap
+from PyQt6.QtGui import QPixmap, QColor, QPainter, QBrush
 from PyQt6.QtCore import Qt
-from PyQt6 import QtGui, uic
-from pytube import YouTube
+from PyQt6 import uic
+from pytube import YouTube, Search
 
 from track_widget import NewTrack
+from settings import *
 from slot_widget import TrackSlot
 
 
-class PyMono(QWidget):
+class PiMono(QWidget):
     def __init__(self, *args, **kwargs):
         """
         Most of the methods in this class are test methods for development.
@@ -19,49 +22,94 @@ class PyMono(QWidget):
         At the moment, the GUI is still under development so the actual code
         will not be prioritized.
         """
-        super(PyMono, self).__init__(*args, **kwargs)
+        super(PiMono, self).__init__(*args, **kwargs)
         # Load form.ui to get the GUI
         uic.loadUi("form.ui", self)
         self.file_path = os.path.dirname(os.path.abspath(__file__))
         self.track_dict = {}
         self.playlist_track_dict = {}
         self.library_track_dict = {}
+        self.search_results = []
+        self.result_index = 0
+        self.w = None
+
+        # Running methods as initialization
         self._playlist_track_widgets()
         self._library_track_widgets()
-        self.w = None
-        self.stackedWidget_3.setCurrentIndex(0)
+        
+        # Setting page indexes for initialization
         self.stackedWidget_2.setCurrentIndex(0)
+        self.stackedWidget_3.setCurrentIndex(0)
+        self.stackedWidget_4.setCurrentIndex(1)
+
+        # Setting placeholder text for line edit fields
         self.lineEdit.setPlaceholderText("Search...")
         self.lineEdit_3.setPlaceholderText("Playlist Name...")
+        self.search_field.setPlaceholderText("Enter YouTube Search...")
         self.lineEdit_3.hide()
 
         self.convert_button.clicked.connect(self._video_tab)
-        self.library_button.clicked.connect(self._library_tab)
+        self.library_button.clicked.connect(self._playlist_tab)
         self.menu_playlists.clicked.connect(self._playlist_tab)
         self.menu_computer.clicked.connect(self._my_computer_tab)
-        self.pushButton_6.clicked.connect(self._test)
         self.new_playlist.clicked.connect(self._show_playlist_creation)
-        self.pushButton.clicked.connect(self._display_from_youtube)
+        self.pushButton.clicked.connect(self._search_youtube)
+        self.previous_result_button.hide()
+        self.next_result_button.hide()
+        self.previous_result_button.clicked.connect(self._show_previous_result)
+        self.next_result_button.clicked.connect(self._show_next_result)
 
         self.listWidget.itemDoubleClicked.connect(self._test)
         self._push()
-        self.stackedWidget_4.setCurrentIndex(1)
-        height = self.label_5.height()
-        width = self.label_5.width()
-        art = QPixmap("../hq720")
-        #if art.width() == art.height():
-        #    self.label_5.setPixmap(art.scaled(height, height))
-        #else:
-        #    self.label_5.setPixmap(art.scaled(width, height))
+        
 
-    def _display_from_youtube(self):
-        if self.lineEdit_2.text():
-            url = self.lineEdit_2.text()
+    def _show_previous_result(self):
+        self.result_index -= 1
+        self._display_results()
+
+    def _show_next_result(self):
+        if self.result_index == (len(self.search_result) - 1):
+            self.result_index = 0
         else:
-            url = "https://www.youtube.com/watch?v=dQw4w9WgXcQ&ab_channel=RickAstley"
-        yt = YouTube(url)
-        print(yt.thumbnail_url)
-        # self._download_from_youtube(yt)
+            self.result_index += 1
+        
+        self._display_results()
+
+    def _display_results(self):
+        self.yt_video = self.search_result[self.result_index]
+        title = self.yt_video.title
+        thumbnail_url = self.yt_video.thumbnail_url
+        video_details = self.yt_video.vid_info.get("videoDetails")
+        video_id = video_details.get("videoId")
+
+
+        self._set_result_thumbnail(thumbnail_url, video_id)
+        
+        self.video_title.setText(title)
+        self.video_title.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.download_button.setText("Download")
+        self.previous_result_button.show()
+        self.next_result_button.show()
+
+
+    def _set_result_thumbnail(self, url, vid_id):
+        data = requests.get(url).content
+        img_name = f"{vid_id}.jpg"
+        img_path = f"{THUMBNAIL_DIR}/{img_name}"
+        if not os.path.exists(img_path):
+            with open(f"{img_path}", "wb") as file:
+                file.write(data)
+
+        self.label_5.setStyleSheet(f"border-image: url('{THUMBNAIL_DIR}/{img_name}');")
+        
+
+    def _search_youtube(self):
+        if self.search_field.text():
+            search = Search(self.search_field.text())
+            self.search_result = search.results
+            self.result_index = 0
+            self._display_results()
+            
 
     def _download_from_youtube(self, yt):
         video = yt.streams.filter().get_highest_resolution()
@@ -150,7 +198,11 @@ class PyMono(QWidget):
         self.lineEdit_3.hide()
 
     def keyPressEvent(self, event):
-        print(event.key())
+        # print(event.key())
+
+        if self.search_field.text():
+            if event.key() == 16777220:
+                self.pushButton.click()
         
         if self.lineEdit_3.text():
             if event.key() == 16777220:
@@ -159,7 +211,6 @@ class PyMono(QWidget):
                 self._hide_playlist_creation()
             if event.key() ==  16777216:
                 self._hide_playlist_creation()
-                
 
     def mouseDoubleClickEvent(self, event):
         for track in self.track_dict:
@@ -181,6 +232,6 @@ class PyMono(QWidget):
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    widget = PyMono()
+    widget = PiMono()
     widget.show()
     sys.exit(app.exec())
