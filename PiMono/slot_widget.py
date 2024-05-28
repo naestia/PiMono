@@ -1,22 +1,6 @@
-# -*- coding: utf-8 -*-
+from PyQt5.QtCore import QSize
+from PyQt5.QtWidgets import QHBoxLayout, QWidget
 
-################################################################################
-## Form generated from reading UI file 'track.ui'
-##
-## Created by: Qt User Interface Compiler version 6.5.1
-##
-## WARNING! All changes made in this file will be lost when recompiling UI file!
-################################################################################
-
-from PyQt5.QtCore import (QCoreApplication, QDate, QDateTime, QLocale,
-    QMetaObject, QObject, QPoint, QRect,
-    QSize, QTime, QUrl, Qt)
-from PyQt5.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
-    QFont, QFontDatabase, QGradient, QIcon,
-    QImage, QKeySequence, QLinearGradient, QPainter,
-    QPalette, QPixmap, QRadialGradient, QTransform)
-from PyQt5.QtWidgets import (QApplication, QFrame, QHBoxLayout, QSizePolicy,
-    QWidget)
 
 class TrackSlot(QWidget):
     def __init__(self, *args, **kwargs):

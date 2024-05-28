@@ -2,3 +2,8 @@
 music
 **__pycache**
 **.DS_Store**
+.idea
+dist
+build
+*.spec
+thumbnails

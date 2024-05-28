@@ -3,16 +3,17 @@ import os
 import random
 import json
 
-from pathlib import Path
 import requests
+from pathlib import Path
+from requests import ConnectionError, Timeout
 import time
 from moviepy.editor import *
 from PyQt5.QtMultimedia import QMediaPlayer, QMediaPlaylist, QMediaContent
-from PyQt5.QtWidgets import QStyle, QApplication, QWidget, QHBoxLayout, QLineEdit, QPushButton, QListWidgetItem
+from PyQt5.QtWidgets import QApplication, QWidget, QListWidgetItem
 from PyQt5.QtGui import QPixmap, QColor, QPainter, QBrush
 from PyQt5.QtCore import Qt, QUrl
 from PyQt5 import uic
-from pytube import YouTube, Search
+from pytube import Search
 from ShazamAPI import Shazam
 import eyed3
 
@@ -24,15 +25,16 @@ from slot_widget import TrackSlot
 class PiMono(QWidget):
     def __init__(self, *args, **kwargs):
         """
-        Initializing classmethod to set the most basic widgets 
+        Initializing class method to set the most basic widgets
         and set up the application.
         """
         super(PiMono, self).__init__(*args, **kwargs)
         # Load form.ui to get the GUI
         self.file_path = os.path.dirname(os.path.abspath(__file__))
-        uic.loadUi(f"{self.file_path}/form.ui", self)
+        uic.loadUi(f"{self.file_path}/forms/form.ui", self)
         self.create_application_directory()
         self.song = ""
+        self.songs_played = []
         self.track_dict = {}
         self.playlist_track_dict = {}
         self.library_track_dict = {}
@@ -42,25 +44,24 @@ class PiMono(QWidget):
         # Setup media player and playlist
         self.player = QMediaPlayer(self)
         self.playlist = QMediaPlaylist(self.player)
-        self.playlist.shuffle()
+        self.playlist.setPlaybackMode(4)
         self.player.setPlaylist(self.playlist)
         self._isLibrarySet = False
 
         # Setup standard library
-        self._set_playlist(mp3Dir) 
+        self._set_playlist(mp3Dir)
 
         # Startup page buttons
         self._convertButton.clicked.connect(self._video_tab)
         self._libraryButton.clicked.connect(self._library_tab)
         self._playlistsButton.clicked.connect(self._playlist_tab)
         self._myComputerButton.clicked.connect(self._my_computer_tab)
-        
+
         # Playlist page buttons
         self._newPlaylistButton.clicked.connect(self._show_playlist_creation)
 
         self.search_results = []
         self.result_index = 0
-        self.w = None
 
         self.playButton.clicked.connect(self._play_pause)
         self.nextButton.clicked.connect(self._next_song)
@@ -71,7 +72,7 @@ class PiMono(QWidget):
         self.set_starting_pages()
         self._playlist_track_widgets()
         self._library_track_widgets()
-        
+
         # Setting placeholder text for line edit fields
         self.lineEdit.setPlaceholderText("Search...")
         self.lineEdit_3.setPlaceholderText("Playlist Name...")
@@ -86,45 +87,71 @@ class PiMono(QWidget):
         self._downloadButton.clicked.connect(self._download_from_youtube)
 
         self.listWidget.itemDoubleClicked.connect(self._set_playlist_page)
-        self.playlist.currentMediaChanged.connect(self._set_now_playing)
+        self.playlist.currentIndexChanged.connect(self._set_now_playing)
 
     def _set_current_song(self, identifier):
-        track = f"{self._get_song(identifier)}.mp3"
+        song = self._get_song(identifier)
+        track = f"{song}.mp3"
+        json_file = Path(f"{jsonLogDir}/{song}.json")
         for index in range(len(self.track_dict)):
             file_name = self.playlist.media(index).canonicalUrl().fileName()
             if file_name == track:
                 self.playlist.setCurrentIndex(index)
-                self._play_song()
-                return
+                self.player.play()
+                if json_file.exists():
+                    self._set_album_art(json_file, song)
+
+    def _set_album_art(self, json_path, song):
+        with json_path.open("r") as file:
+            data = file.read()
+
+        json_data = json.loads(data)
+        cover_art = ""
+        cover_art_path = f"{albumCovers}/{song}.jpg"
+        url = json_data[1]["track"]["images"]["coverart"]
+        try:
+            cover_art = requests.get(timeout=3, url=url).content
+        except ConnectionError:
+            print("Check internet connection")
+        except Timeout:
+            print("Request Timed out")
+
+        if not Path(cover_art_path).exists() and cover_art:
+            with open(f"{cover_art_path}", "wb") as file:
+                file.write(cover_art)
+
+            self.albumArt.setStyleSheet(f"border-image: url('{cover_art_path}');")
+        elif Path(cover_art_path).exists():
+            self.albumArt.setStyleSheet(f"border-image: url('{cover_art_path}');")
 
     def _get_song(self, identifier):
         return self.track_dict[identifier]["Name"]
 
-    def _play_song(self):
-        self.player.play()
-        self._set_now_playing()
-    
     def _set_now_playing(self):
+        if not self.playlist.currentIndex() in self.songs_played:
+            self.songs_played.append(self.playlist.currentIndex())
+
+        print(self.songs_played)
+
         now_playing = self.playlist.media(self.playlist.currentIndex()).canonicalUrl().fileName()
         self._nowPlaying.setText(f"Now Playing:         {now_playing}")
-    
-    def _pause_song(self):
-        self.player.pause()
-        self._nowPlaying.clear()
         
     def _play_pause(self):
         if self.player.state() == 2 or self.player.state() == 0:
-            self._play_song()
+            self.player.play()
+            self._set_now_playing()
         elif self.player.state() == 1:
-            self._pause_song()
+            self.player.pause()
+            self._nowPlaying.clear()
 
     def _next_song(self):
         self.playlist.next()
-        self._play_song()
-    
+
     def _previous_song(self):
+        if self.playlist.currentIndex() in self.songs_played:
+            self.songs_played.remove(self.playlist.currentIndex())
+
         self.playlist.previous()
-        self._play_song()
 
     def _set_playlist(self, dir):
         self._clear_playlist()
@@ -190,8 +217,9 @@ class PiMono(QWidget):
         self.label_5.setStyleSheet(f"border-image: url('{THUMBNAIL_DIR}/{img_name}');")
 
     def _search_youtube(self):
-        if self.search_field.text():
-            search = Search(self.search_field.text())
+        search_term = self.search_field.text()
+        if search_term:
+            search = Search(search_term)
             self.search_result = search.results
             self.result_index = 0
             self._display_results()
@@ -220,29 +248,27 @@ class PiMono(QWidget):
     
     def _get_meta_data(self, song=None):
         if song:
-            id3 = eyed3.load(song)
-            if not id3.tag.title:
-                with open(song, "rb") as file:
-                    path_to_song = file.read()
+            with open(song, "rb") as file:
+                path_to_song = file.read()
 
-                shazam = Shazam(path_to_song)
-                rec_gen = shazam.recognizeSong()
-                json_data = json.dumps(next(rec_gen), indent=2)
-                song_info = json.loads(json_data)
+            shazam = Shazam(path_to_song)
+            rec_gen = shazam.recognizeSong()
+            json_data = json.dumps(next(rec_gen), indent=2)
+            song_info = json.loads(json_data)
 
-                if song_info[1]["matches"]:
-                    try:
-                        song_name = song_info[1]["track"]["title"]
-                        artist = song_info[1]["track"]["subtitle"]
-                    except:
-                        song_name = str(Path(song).stem)
-                        artist = "Unknown"
-                    try:
-                        album_name = song_info[1]['track']['sections'][0]['metadata'][0]['text']
-                    except KeyError:
-                        album_name = 'Unknown'
-                    except IndexError:
-                        album_name = 'Unknown'
+            if song_info[1].get("matches"):
+                try:
+                    song_name = song_info[1]["track"]["title"]
+                    artist = song_info[1]["track"]["subtitle"]
+                except:
+                    song_name = str(Path(song).stem)
+                    artist = "Unknown"
+                try:
+                    album_name = song_info[1]['track']['sections'][0]['metadata'][0]['text']
+                except KeyError:
+                    album_name = 'Unknown'
+                except IndexError:
+                    album_name = 'Unknown'
 
             self._log_json_dump(song_name, json_data)
         
@@ -290,13 +316,13 @@ class PiMono(QWidget):
             name=song,
         )
         if self.track_dict[self.new_track]["Track Number"] < 10:
-            self.new_track.ID.setText(f"    {str(self.track_dict[self.new_track]['Track Number'])}")
+            self.new_track.idLabel.setText(f"    {str(self.track_dict[self.new_track]['Track Number'])}")
         else:
-            self.new_track.ID.setText(f"   {str(self.track_dict[self.new_track]['Track Number'])}")
+            self.new_track.idLabel.setText(f"   {str(self.track_dict[self.new_track]['Track Number'])}")
 
-        self.new_track.name.setText(f"   {str(self.track_dict[self.new_track]['Name'])}")
-        self.new_track.artist.setText(f"   {str(self.track_dict[self.new_track]['Artist'])}")
-        self.new_track.duration.setText(f"   {str(self.track_dict[self.new_track]['Duration'])}")
+        self.new_track.nameLabel.setText(f"   {str(self.track_dict[self.new_track]['Name'])}")
+        self.new_track.artistLabel.setText(f"   {str(self.track_dict[self.new_track]['Artist'])}")
+        self.new_track.durationLabel.setText(f"   {str(self.track_dict[self.new_track]['Duration'])}")
 
     def _show_playlist_creation(self):
         self.lineEdit_3.show()
@@ -355,19 +381,11 @@ class PiMono(QWidget):
         self._hide_playlist_creation()
         self.stackedWidget_3.setCurrentIndex(2)
 
-    def _push_2(self):
-        for track in self.track_dict:
-            pass
-
-        print(self.track_dict)
-
     def _hide_playlist_creation(self):
         self.lineEdit_3.clear()
         self.lineEdit_3.hide()
 
     def keyPressEvent(self, event):
-        # print(event.key())
-
         if event.key() == 32:
             self._play_pause()
 
@@ -381,12 +399,13 @@ class PiMono(QWidget):
                 playlist_name = self.lineEdit_3.text()
                 self._create_playlist(playlist_name)
                 self._hide_playlist_creation()
-            if event.key() ==  16777216:
+            if event.key() == 16777216:
                 self._hide_playlist_creation()
 
     def mouseDoubleClickEvent(self, event):
         for track in self.track_dict:
             if track.underMouse():
+                self.songs_played.clear()
                 self._set_current_song(track)
 
     def mousePressEvent(self, event):
@@ -394,18 +413,19 @@ class PiMono(QWidget):
             for track in self.track_dict:
                 if track.underMouse():
                     track_number = self.track_dict[track]["Track Number"]
-                    track.setStyleSheet("QFrame {background-color: #393e46; border-radius: 10px;} QLabel {color:#96a4b8;}")
+                    track.styleFrame.setStyleSheet("QFrame {background-color: #393e46; border-radius: 10px;} QLabel {color:#96a4b8;}")
                     self.playlist_track_dict[track_number].setStyleSheet("background-color: black;")
                 else:
-                    track.setStyleSheet("QFrame {background-color: #22262b; border-radius: 10px;} QLabel {color:#96a4b8;}")
+                    track.styleFrame.setStyleSheet("QFrame {background-color: #22262b; border-radius: 10px;} QLabel {color:#96a4b8;}")
             if self.listWidget.currentItem():
                 self.listWidget.setCurrentItem(None)
         elif event.button() == Qt.MouseButton.RightButton:
             pass
 
-    def create_application_directory(self):
+    @staticmethod
+    def create_application_directory():
         for directory in appDirList:
-            if not (directory).exists():
+            if not directory.exists():
                 directory.mkdir()
     
     def set_starting_pages(self):
@@ -413,10 +433,11 @@ class PiMono(QWidget):
         self.stackedWidget_3.setCurrentIndex(0)
         self.stackedWidget_4.setCurrentIndex(1)
 
-    def _log_json_dump(self, song, json_data):
-        if jsonLogDir.exists():
-            logFile = Path(f"{jsonLogDir}/{song}.json")
-            with logFile.open("w") as file:
+    @staticmethod
+    def _log_json_dump(song=None, json_data=None):
+        if jsonLogDir.exists() and song:
+            log_file = Path(f"{jsonLogDir}/{song}.json")
+            with log_file.open("w") as file:
                 file.write(json_data)
 
 

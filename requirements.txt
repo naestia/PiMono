@@ -1,4 +1,4 @@
-PyQt6
+PyQt5
 pytube
 requests
 pydub
@@ -6,3 +6,4 @@ ffmpeg
 ffprobe
 ShazamAPI
 eyed3
+moviepy

@@ -13,12 +13,14 @@ dataDir = appDir / "Data"
 logDir = appDir / "Logs"
 jsonLogDir = logDir / "Json logs"
 databaseDir = dataDir / ".database"
+albumCovers = mediaDir / "Images"
 appDirList = [
-            appDir,
-            mediaDir,
-            mp3Dir,
-            dataDir,
-            logDir,
-            jsonLogDir,
-            databaseDir,
-        ]
+    appDir,
+    mediaDir,
+    mp3Dir,
+    dataDir,
+    logDir,
+    jsonLogDir,
+    databaseDir,
+    albumCovers,
+]

@@ -380,116 +380,13 @@ border: 1px solid #575f6c; }</string>
                <property name="verticalSpacing">
                 <number>6</number>
                </property>
-               <item row="0" column="0">
-                <widget class="QWidget" name="widget_12" native="true">
-                 <property name="minimumSize">
-                  <size>
-                   <width>0</width>
-                   <height>70</height>
-                  </size>
-                 </property>
-                 <property name="styleSheet">
-                  <string notr="true">QWidget {background-color:#282c32; border-radius: 10px;}</string>
-                 </property>
-                 <layout class="QHBoxLayout" name="horizontalLayout_8">
-                  <property name="spacing">
-                   <number>0</number>
-                  </property>
-                  <property name="leftMargin">
-                   <number>0</number>
-                  </property>
-                  <property name="topMargin">
-                   <number>0</number>
-                  </property>
-                  <property name="rightMargin">
-                   <number>0</number>
-                  </property>
-                  <property name="bottomMargin">
-                   <number>0</number>
-                  </property>
-                  <item>
-                   <widget class="QPushButton" name="_playlistsButton">
-                    <property name="minimumSize">
-                     <size>
-                      <width>0</width>
-                      <height>50</height>
-                     </size>
-                    </property>
-                    <property name="maximumSize">
-                     <size>
-                      <width>16777215</width>
-                      <height>40</height>
-                     </size>
-                    </property>
-                    <property name="font">
-                     <font>
-                      <family>Arial</family>
-                      <pointsize>14</pointsize>
-                      <bold>false</bold>
-                     </font>
-                    </property>
-                    <property name="styleSheet">
-                     <string notr="true">QPushButton {color:#c3d5f1;}
-QPushButton::hover {color:#96a4b8;}
-QPushButton:pressed {color:white;}
-</string>
-                    </property>
-                    <property name="text">
-                     <string>Playlists</string>
-                    </property>
-                    <property name="checkable">
-                     <bool>true</bool>
-                    </property>
-                   </widget>
-                  </item>
-                  <item>
-                   <widget class="QPushButton" name="_myComputerButton">
-                    <property name="minimumSize">
-                     <size>
-                      <width>0</width>
-                      <height>50</height>
-                     </size>
-                    </property>
-                    <property name="maximumSize">
-                     <size>
-                      <width>16777215</width>
-                      <height>40</height>
-                     </size>
-                    </property>
-                    <property name="font">
-                     <font>
-                      <family>Arial</family>
-                      <pointsize>14</pointsize>
-                      <bold>false</bold>
-                     </font>
-                    </property>
-                    <property name="styleSheet">
-                     <string notr="true">QPushButton {color:#c3d5f1;}
-QPushButton::hover {color:#96a4b8;}
-QPushButton:pressed {color:white;}
-</string>
-                    </property>
-                    <property name="text">
-                     <string>My Computer</string>
-                    </property>
-                    <property name="checkable">
-                     <bool>true</bool>
-                    </property>
-                    <property name="checked">
-                     <bool>false</bool>
-                    </property>
-                   </widget>
-                  </item>
-                 </layout>
-                </widget>
-               </item>
                <item row="2" column="0">
                 <widget class="QStackedWidget" name="stackedWidget_3">
                  <property name="styleSheet">
                   <string notr="true">QWidget {background-color:#282c32; border-radius: 10px; border:0px;}</string>
                  </property>
                  <property name="currentIndex">
-                  <number>1</number>
+                  <number>0</number>
                  </property>
                  <widget class="QWidget" name="home_left_widget"/>
                  <widget class="QWidget" name="playlists_page">
@@ -622,8 +519,8 @@ QPushButton:pressed {color:white;}
                        <rect>
                         <x>0</x>
                         <y>0</y>
-                        <width>69</width>
-                        <height>93</height>
+                        <width>206</width>
+                        <height>357</height>
                        </rect>
                       </property>
                       <property name="styleSheet">
@@ -700,6 +597,153 @@ QPushButton:pressed {color:white;}
                     </property>
                     <property name="styleSheet">
                      <string notr="true">QLineEdit {padding: 4px; background-color:#393e46; border-width:1px; border-style: solid; border-radius: 10px; border-color: #484e58; color:#c3d5f1;}</string>
+                    </property>
+                   </widget>
+                  </item>
+                 </layout>
+                </widget>
+               </item>
+               <item row="0" column="0">
+                <widget class="QWidget" name="widget_12" native="true">
+                 <property name="minimumSize">
+                  <size>
+                   <width>0</width>
+                   <height>70</height>
+                  </size>
+                 </property>
+                 <property name="styleSheet">
+                  <string notr="true">QWidget {background-color:#282c32; border-radius: 10px;}</string>
+                 </property>
+                 <layout class="QHBoxLayout" name="horizontalLayout_8">
+                  <property name="spacing">
+                   <number>0</number>
+                  </property>
+                  <property name="leftMargin">
+                   <number>0</number>
+                  </property>
+                  <property name="topMargin">
+                   <number>0</number>
+                  </property>
+                  <property name="rightMargin">
+                   <number>0</number>
+                  </property>
+                  <property name="bottomMargin">
+                   <number>0</number>
+                  </property>
+                  <item>
+                   <widget class="QPushButton" name="_playlistsButton">
+                    <property name="minimumSize">
+                     <size>
+                      <width>0</width>
+                      <height>50</height>
+                     </size>
+                    </property>
+                    <property name="maximumSize">
+                     <size>
+                      <width>16777215</width>
+                      <height>40</height>
+                     </size>
+                    </property>
+                    <property name="font">
+                     <font>
+                      <family>Arial</family>
+                      <pointsize>14</pointsize>
+                      <bold>false</bold>
+                     </font>
+                    </property>
+                    <property name="styleSheet">
+                     <string notr="true">QPushButton {color:#c3d5f1;}
+QPushButton::hover {color:#96a4b8;}
+QPushButton:pressed {color:white;}
+</string>
+                    </property>
+                    <property name="text">
+                     <string>Playlists</string>
+                    </property>
+                    <property name="checkable">
+                     <bool>true</bool>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QPushButton" name="_myComputerButton">
+                    <property name="minimumSize">
+                     <size>
+                      <width>0</width>
+                      <height>50</height>
+                     </size>
+                    </property>
+                    <property name="maximumSize">
+                     <size>
+                      <width>16777215</width>
+                      <height>40</height>
+                     </size>
+                    </property>
+                    <property name="font">
+                     <font>
+                      <family>Arial</family>
+                      <pointsize>14</pointsize>
+                      <bold>false</bold>
+                     </font>
+                    </property>
+                    <property name="styleSheet">
+                     <string notr="true">QPushButton {color:#c3d5f1;}
+QPushButton::hover {color:#96a4b8;}
+QPushButton:pressed {color:white;}
+</string>
+                    </property>
+                    <property name="text">
+                     <string>My Computer</string>
+                    </property>
+                    <property name="checkable">
+                     <bool>true</bool>
+                    </property>
+                    <property name="checked">
+                     <bool>false</bool>
+                    </property>
+                   </widget>
+                  </item>
+                 </layout>
+                </widget>
+               </item>
+               <item row="3" column="0">
+                <widget class="QFrame" name="frame_18">
+                 <property name="minimumSize">
+                  <size>
+                   <width>230</width>
+                   <height>230</height>
+                  </size>
+                 </property>
+                 <property name="frameShape">
+                  <enum>QFrame::NoFrame</enum>
+                 </property>
+                 <property name="frameShadow">
+                  <enum>QFrame::Raised</enum>
+                 </property>
+                 <layout class="QHBoxLayout" name="horizontalLayout_15">
+                  <property name="spacing">
+                   <number>0</number>
+                  </property>
+                  <property name="leftMargin">
+                   <number>0</number>
+                  </property>
+                  <property name="topMargin">
+                   <number>0</number>
+                  </property>
+                  <property name="rightMargin">
+                   <number>0</number>
+                  </property>
+                  <property name="bottomMargin">
+                   <number>0</number>
+                  </property>
+                  <item>
+                   <widget class="QLabel" name="albumArt">
+                    <property name="styleSheet">
+                     <string notr="true">QFrame {background-color:#282c32; border-radius: 10px;
+border: 0px solid #575f6c; }</string>
+                    </property>
+                    <property name="text">
+                     <string/>
                     </property>
                    </widget>
                   </item>
@@ -1689,8 +1733,8 @@ QPushButton:pressed {color:white;}
                        <rect>
                         <x>0</x>
                         <y>0</y>
-                        <width>891</width>
-                        <height>367</height>
+                        <width>100</width>
+                        <height>30</height>
                        </rect>
                       </property>
                       <layout class="QVBoxLayout" name="verticalLayout_13"/>
