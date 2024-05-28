@@ -211,7 +211,6 @@ class PiMono(QWidget):
         img_name = f"{vid_id}.jpg"
         img_path = Path(f"{THUMBNAIL_DIR}/{img_name}")
         if not img_path.exists():
-            img_path.mkdir()
             with open(f"{img_path}", "wb") as file:
                 file.write(data)
 
