@@ -15,6 +15,9 @@ jsonLogDir = logDir / "Json logs"
 databaseDir = dataDir / ".database"
 albumCovers = mediaDir / "Images"
 appDirList = [
+    MP4,
+    MP3,
+    THUMBNAIL_DIR,
     appDir,
     mediaDir,
     mp3Dir,

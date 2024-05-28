@@ -209,8 +209,9 @@ class PiMono(QWidget):
     def _set_result_thumbnail(self, url, vid_id):
         data = requests.get(url).content
         img_name = f"{vid_id}.jpg"
-        img_path = f"{THUMBNAIL_DIR}/{img_name}"
-        if not os.path.exists(img_path):
+        img_path = Path(f"{THUMBNAIL_DIR}/{img_name}")
+        if not img_path.exists():
+            img_path.mkdir()
             with open(f"{img_path}", "wb") as file:
                 file.write(data)
 
