@@ -7,3 +7,4 @@ ffprobe
 ShazamAPI
 eyed3
 moviepy
+watchdog
