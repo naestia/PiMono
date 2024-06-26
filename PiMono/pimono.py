@@ -120,9 +120,7 @@ class PiMono(QWidget):
             with open(f"{cover_art_path}", "wb") as file:
                 file.write(cover_art)
 
-            self.albumArt.setStyleSheet(f"border-image: url('{cover_art_path}');")
-        elif Path(cover_art_path).exists():
-            self.albumArt.setStyleSheet(f"border-image: url('{cover_art_path}');")
+        self.albumArt.setStyleSheet(f"border-image: url('{cover_art_path}');")
 
     def _get_song(self, identifier):
         return self.track_dict[identifier]["Name"]
