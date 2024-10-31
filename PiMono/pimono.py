@@ -1,3 +1,4 @@
+import asyncio
 import sys
 import os
 import random
@@ -15,11 +16,13 @@ from PyQt5.QtCore import Qt, QUrl
 from PyQt5 import uic
 from pytube import Search
 from ShazamAPI import Shazam
+from shazamio import Shazam as shazz
 import eyed3
 
 from track_widget import NewTrack
 from settings import *
 from slot_widget import TrackSlot
+# import pimono_db
 
 
 class PiMono(QWidget):
@@ -90,8 +93,14 @@ class PiMono(QWidget):
         self.playlist.currentIndexChanged.connect(self._set_now_playing)
 
     def _set_current_song(self, identifier):
+        """
+
+        :param identifier:
+        :return:
+        """
         song = self._get_song(identifier)
         track = f"{song}.mp3"
+        song_path = Path(f"{mp3Dir}/{track}")
         json_file = Path(f"{jsonLogDir}/{song}.json")
         for index in range(len(self.track_dict)):
             file_name = self.playlist.media(index).canonicalUrl().fileName()
@@ -100,6 +109,8 @@ class PiMono(QWidget):
                 self.player.play()
                 if json_file.exists():
                     self._set_album_art(json_file, song)
+                else:
+                    self._set_meta_data(song_path=song_path)
 
     def _set_album_art(self, json_path, song):
         with json_path.open("r") as file:
@@ -108,17 +119,30 @@ class PiMono(QWidget):
         json_data = json.loads(data)
         cover_art = ""
         cover_art_path = f"{albumCovers}/{song}.jpg"
-        url = json_data[1]["track"]["images"]["coverart"]
-        try:
-            cover_art = requests.get(timeout=3, url=url).content
-        except ConnectionError:
-            print("Check internet connection")
-        except Timeout:
-            print("Request Timed out")
+        track = {}
+        if json_data:
+            track = json_data.get("track")
 
-        if not Path(cover_art_path).exists() and cover_art:
-            with open(f"{cover_art_path}", "wb") as file:
-                file.write(cover_art)
+        if track:
+            images = track.get("images")
+            if images:
+                url = images.get("coverart")
+            else:
+                url = "https://images.pexels.com/photos/2170729/pexels-photo-2170729.jpeg"
+        else:
+            url = "https://images.pexels.com/photos/2170729/pexels-photo-2170729.jpeg"
+
+        if not Path(cover_art_path).exists():
+            try:
+                cover_art = requests.get(timeout=3, url=url).content
+            except ConnectionError:
+                print("Check your internet connection")
+            except Timeout:
+                print("Request Timed out")
+
+            if cover_art:
+                with open(f"{cover_art_path}", "wb") as file:
+                    file.write(cover_art)
 
         self.albumArt.setStyleSheet(f"border-image: url('{cover_art_path}');")
 
@@ -129,11 +153,16 @@ class PiMono(QWidget):
         if not self.playlist.currentIndex() in self.songs_played:
             self.songs_played.append(self.playlist.currentIndex())
 
-        print(self.songs_played)
+        now_playing = self.playlist.media(self.playlist.currentIndex()).canonicalUrl().fileName().replace('.mp3', '')
+        identifier = self._get_identifier_from_name(now_playing)
+        self._set_current_song(identifier)
+        self._nowPlaying.setText(f"{now_playing}")
 
-        now_playing = self.playlist.media(self.playlist.currentIndex()).canonicalUrl().fileName()
-        self._nowPlaying.setText(f"Now Playing:         {now_playing}")
-        
+    def _get_identifier_from_name(self, song_name):
+        for track in self.track_dict:
+            if self.track_dict[track]['Name'] == song_name:
+                return track
+
     def _play_pause(self):
         if self.player.state() == 2 or self.player.state() == 0:
             self.player.play()
@@ -170,10 +199,12 @@ class PiMono(QWidget):
         self.song_paths.append(song)
 
     def _show_previous_result(self):
+        """PyTube Method"""
         self.result_index -= 1
         self._display_results()
 
     def _show_next_result(self):
+        """PyTube Method"""
         if self.result_index == (len(self.search_result) - 1):
             self.result_index = 0
         else:
@@ -182,6 +213,7 @@ class PiMono(QWidget):
         self._display_results()
 
     def _display_results(self):
+        """PyTube Method"""
         self.yt_video = self.search_result[self.result_index]
         title = self.yt_video.title
         duration_minutes = self.yt_video.length // 60
@@ -205,6 +237,7 @@ class PiMono(QWidget):
         self._nextResultButton.show()
         
     def _set_result_thumbnail(self, url, vid_id):
+        """PyTube Method"""
         data = requests.get(url).content
         img_name = f"{vid_id}.jpg"
         img_path = Path(f"{THUMBNAIL_DIR}/{img_name}")
@@ -215,6 +248,7 @@ class PiMono(QWidget):
         self.label_5.setStyleSheet(f"border-image: url('{THUMBNAIL_DIR}/{img_name}');")
 
     def _search_youtube(self):
+        """PyTube Method"""
         search_term = self.search_field.text()
         if search_term:
             search = Search(search_term)
@@ -223,28 +257,35 @@ class PiMono(QWidget):
             self._display_results()
 
     def _download_from_youtube(self):
+        """
+        PyTube Method
+        Downloads the YouTube Video and converts the MP4 to an MP3.
+        """
         video = self.yt_video.streams.filter().get_highest_resolution()
         destination = MP4
         file_name = video.default_filename
         video.download(output_path=destination)
-        self._export_to_mp3(file_name)
+        destination_mp3 = f"{mp3Dir}/{file_name.replace('.mp4', '.mp3')}"
+        destination_mp4 = f"{MP4}/{file_name}"
+        self._convert_to_mp3(destination_mp4, destination_mp3)
         os.remove(f"{MP4}/{file_name}")
     
-    def _export_to_mp3(self, file_name):
-        destination_mp3 = f"{mp3Dir}/{file_name.replace('mp4', 'mp3')}"
-        destination_mp4 = f"{MP4}/{file_name}"
-        if not os.path.exists(destination_mp3):
-            from_mp4 = AudioFileClip(destination_mp4)
-            from_mp4.write_audiofile(destination_mp3)
+    def _convert_to_mp3(self, mp4, mp3):
+        """PyTube Method"""
+        print(mp4)
+        if not os.path.exists(mp3):
+            from_mp4 = AudioFileClip(mp4)
+            from_mp4.write_audiofile(mp3)
             from_mp4.close()
 
-        new_name = self._set_meta_data(destination_mp3)
+        new_name = self._set_meta_data(mp3)
         if self._isLibrarySet:    
             self._add_song_to_playlist(new_name, "lib")
         
         self._append_song(new_name)
     
     def _get_meta_data(self, song=None):
+        """PyTube Method"""
         if song:
             with open(song, "rb") as file:
                 path_to_song = file.read()
@@ -254,7 +295,7 @@ class PiMono(QWidget):
             json_data = json.dumps(next(rec_gen), indent=2)
             song_info = json.loads(json_data)
 
-            if song_info[1].get("matches"):
+            if song_info.get("matches"):
                 try:
                     song_name = song_info[1]["track"]["title"]
                     artist = song_info[1]["track"]["subtitle"]
@@ -271,19 +312,52 @@ class PiMono(QWidget):
             self._log_json_dump(song_name, json_data)
         
         return {"Title": song_name, "Artist": artist, "Album": album_name}
-    
-    def _set_meta_data(self, song):
-        meta_data = self._get_meta_data(song)
-        id3 = eyed3.load(song)
+
+    async def _get_meta_data_dos(self, song):
+        shazam = shazz()
+        out = await shazam.recognize(str(song))
+        song_name = str(Path(song).stem)
+        artist = "Unknown"
+        album_name = "Unknown"
+        if out.get("matches"):
+            track = out.get('track')
+            try:
+                song_name = track.get('title')
+                artist = track.get('subtitle')
+            except:
+                print(f"Error getting meta data for {song}")
+            try:
+                album_name = track.get('sections')[0]['metadata'][0]['text']
+            except KeyError:
+                album_name = 'Unknown'
+            except IndexError:
+                album_name = 'Unknown'
+
+            self._log_json_dump(song_name, out)
+
+        return {"Title": song_name, "Artist": artist, "Album": album_name}
+
+    def _set_meta_data(self, song_path):
+        """
+        PyTube Method
+        Needs the entire song_path
+        """
+        print(song_path)
+        loop = asyncio.get_event_loop()
+        meta_data = loop.run_until_complete(self._get_meta_data_dos(song_path))
+        id3 = eyed3.load(song_path)
         id3.tag.title = meta_data["Title"]
         id3.tag.artist = meta_data["Artist"]
         id3.tag.album = meta_data["Album"]
         id3.tag.save()
         new_name = f"{mp3Dir}/{id3.tag.title}.mp3"
-        os.rename(song, f"{mp3Dir}/{id3.tag.title}.mp3")
+        os.rename(song_path, f"{mp3Dir}/{id3.tag.title}.mp3")
         return new_name
 
     def _library_tab(self):
+        """
+        Initializes library tab
+        """
         self._set_library_page()
         if not self._isLibrarySet:
             for song in self.song_library:
@@ -301,7 +375,10 @@ class PiMono(QWidget):
         }
 
     def _add_song_to_playlist(self, song, typeOf=None):
+        path_to_song = Path(f'{mp3Dir}/{song}')
         song = Path(song).stem
+        id3 = eyed3.load(path_to_song)
+        artist = id3.tag.artist if id3.tag.artist is    not None else "Unknown"
         index = len(self.track_dict) + 1
         self.new_track = NewTrack()
         if typeOf == "lib":
@@ -312,6 +389,7 @@ class PiMono(QWidget):
         self._add_track_object(
             identifier=self.new_track,
             name=song,
+            artist=artist
         )
         if self.track_dict[self.new_track]["Track Number"] < 10:
             self.new_track.idLabel.setText(f"    {str(self.track_dict[self.new_track]['Track Number'])}")
@@ -345,13 +423,13 @@ class PiMono(QWidget):
         self._libraryLabel.setText("My Library")
 
     def _library_track_widgets(self):
-        for track in range(100):
+        for track in range(1000):
             self.library_track_slot = TrackSlot()
             self.verticalLayout_13.addWidget(self.library_track_slot)
             self.library_track_dict[len(self.library_track_dict) + 1] = self.library_track_slot
 
     def _playlist_track_widgets(self):
-        for track in range(100):
+        for track in range(1000):
             self.playlist_track_slot = TrackSlot()
             self.verticalLayout_3.addWidget(self.playlist_track_slot)
             self.playlist_track_dict[len(self.playlist_track_dict) + 1] = self.playlist_track_slot
@@ -436,7 +514,7 @@ class PiMono(QWidget):
         if jsonLogDir.exists() and song:
             log_file = Path(f"{jsonLogDir}/{song}.json")
             with log_file.open("w") as file:
-                file.write(json_data)
+                json.dump(json_data, file)
 
 
 if __name__ == "__main__":

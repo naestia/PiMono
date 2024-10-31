@@ -8,3 +8,5 @@ ShazamAPI
 eyed3
 moviepy
 watchdog
+shazamio
+mutagen
