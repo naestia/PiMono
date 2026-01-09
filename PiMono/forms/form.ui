@@ -407,8 +407,8 @@ border: 1px solid #575f6c; }</string>
                        <rect>
                         <x>0</x>
                         <y>0</y>
-                        <width>100</width>
-                        <height>126</height>
+                        <width>69</width>
+                        <height>123</height>
                        </rect>
                       </property>
                       <property name="styleSheet">
@@ -519,8 +519,8 @@ QPushButton:pressed {color:white;}
                        <rect>
                         <x>0</x>
                         <y>0</y>
-                        <width>100</width>
-                        <height>96</height>
+                        <width>69</width>
+                        <height>93</height>
                        </rect>
                       </property>
                       <property name="styleSheet">
@@ -1751,8 +1751,8 @@ QPushButton:pressed {color:white;}
                        <rect>
                         <x>0</x>
                         <y>0</y>
-                        <width>100</width>
-                        <height>30</height>
+                        <width>85</width>
+                        <height>24</height>
                        </rect>
                       </property>
                       <layout class="QVBoxLayout" name="verticalLayout_13"/>
@@ -2055,7 +2055,51 @@ QPushButton:pressed {color:white;}
             </property>
             <item>
              <widget class="QWidget" name="widget_13" native="true">
-              <layout class="QFormLayout" name="formLayout"/>
+              <property name="minimumSize">
+               <size>
+                <width>550</width>
+                <height>0</height>
+               </size>
+              </property>
+              <property name="maximumSize">
+               <size>
+                <width>550</width>
+                <height>16777215</height>
+               </size>
+              </property>
+              <layout class="QHBoxLayout" name="horizontalLayout_19">
+               <property name="spacing">
+                <number>0</number>
+               </property>
+               <property name="leftMargin">
+                <number>0</number>
+               </property>
+               <property name="topMargin">
+                <number>0</number>
+               </property>
+               <property name="rightMargin">
+                <number>0</number>
+               </property>
+               <property name="bottomMargin">
+                <number>0</number>
+               </property>
+               <item>
+                <widget class="QSlider" name="progressSlider">
+                 <property name="maximumSize">
+                  <size>
+                   <width>550</width>
+                   <height>16777215</height>
+                  </size>
+                 </property>
+                 <property name="styleSheet">
+                  <string notr="true">QSlider::handle {width: 0px;height: 0px;}</string>
+                 </property>
+                 <property name="orientation">
+                  <enum>Qt::Horizontal</enum>
+                 </property>
+                </widget>
+               </item>
+              </layout>
              </widget>
             </item>
             <item>

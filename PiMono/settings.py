@@ -1,6 +1,10 @@
 import os
 from pathlib import Path
 
+# Colors
+SELECTED = "QFrame {background-color: #393e46; border-radius: 10px;} QLabel {color:#96a4b8;}"
+UNSELECTED = "QFrame {background-color: #22262b; border-radius: 10px;} QLabel {color:#96a4b8;}"
+
 # These paths are for code related stuff
 SRC_DIR = os.path.dirname(os.path.abspath(__file__))
 WORK_DIR = Path(SRC_DIR).parent
